@@ -35,11 +35,10 @@ RUN apt-get update \
         libssl3 \
         openssh-client \
         sshpass \
-        gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --chown=1001:1001 . /opt/CTFd
+COPY . /opt/CTFd
 
 RUN useradd \
     --no-log-init \
@@ -47,14 +46,12 @@ RUN useradd \
     -u 1001 \
     ctfd \
     && mkdir -p /var/log/CTFd /var/uploads /root/.ssh \
-    && chown -R 1001:1001 /var/log/CTFd /var/uploads /opt/CTFd \
+    && chown -R 1001:1001 /var/log/CTFd /var/uploads \
     && chmod 700 /root/.ssh \
-    && chmod 755 /root
+    && chmod 755 /root \
+    && chmod +x /opt/CTFd/docker-entrypoint.sh
 
-COPY docker-entrypoint.sh /opt/CTFd/docker-entrypoint.sh
-RUN chmod +x /opt/CTFd/docker-entrypoint.sh
-
-COPY --chown=1001:1001 --from=build /opt/venv /opt/venv
+COPY --from=build /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 EXPOSE 8000

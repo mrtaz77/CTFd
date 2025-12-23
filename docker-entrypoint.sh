@@ -1,21 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Fix SSH directory permissions (in case mounted from host)
-if [ -d /root/.ssh ]; then
-    chmod 700 /root/.ssh
-    # Fix permissions for all files in .ssh directory
-    if [ -f /root/.ssh/id_rsa ]; then
-        chmod 600 /root/.ssh/id_rsa
-    fi
-    if [ -f /root/.ssh/id_rsa.pub ]; then
-        chmod 644 /root/.ssh/id_rsa.pub
-    fi
-    if [ -f /root/.ssh/known_hosts ]; then
-        chmod 644 /root/.ssh/known_hosts
-    fi
-fi
-
 # Generate SSH keys if they don't exist and CHALLENGE_DROPLET_IP is set
 if [ -n "${CHALLENGE_DROPLET_IP:-}" ] && [ ! -f /root/.ssh/id_rsa ]; then
     mkdir -p /root/.ssh
@@ -56,16 +41,15 @@ fi
 # Skip db ping if SKIP_DB_PING is set to a value other than false or empty string
 if [[ "$SKIP_DB_PING" == "false" ]]; then
   # Ensures that the database is available
-  gosu ctfd python ping.py
+  python ping.py
 fi
 
 # Initialize database
-gosu ctfd flask db upgrade
+flask db upgrade
 
 # Start CTFd
 echo "Starting CTFd"
-# Drop privileges to ctfd user before starting the application
-exec gosu ctfd gunicorn 'CTFd:create_app()' \
+exec gunicorn 'CTFd:create_app()' \
     --bind '0.0.0.0:8000' \
     --workers $WORKERS \
     --worker-tmp-dir "$WORKER_TEMP_DIR" \
