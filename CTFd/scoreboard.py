@@ -2,6 +2,7 @@ from flask import Blueprint, render_template
 
 from CTFd.utils import config
 from CTFd.utils.config.visibility import scores_visible
+from CTFd.utils.decorators import admins_only
 from CTFd.utils.decorators.visibility import (
     check_account_visibility,
     check_score_visibility,
@@ -27,3 +28,18 @@ def listing():
 
     standings = get_standings()
     return render_template("scoreboard.html", standings=standings, infos=infos)
+
+
+@scoreboard.route("/scoreboard/3d")
+@admins_only
+def scoreboard_3d():
+    infos = get_infos()
+
+    if config.is_scoreboard_frozen():
+        infos.append("Scoreboard has been frozen")
+
+    if is_admin() is True and scores_visible() is False:
+        infos.append("Scores are not currently visible to users")
+
+    standings = get_standings()
+    return render_template("scoreboard_3d.html", standings=standings, infos=infos)
